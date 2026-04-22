@@ -1,69 +1,67 @@
-package com.example.smartmedicinereminder;
+package com.example.smartmedicinereminder
 
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.os.Build;
-import android.widget.Toast;
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.os.Build
+import android.widget.Toast
+import androidx.core.app.NotificationCompat
 
-import androidx.core.app.NotificationCompat;
+class AlarmReceiver : BroadcastReceiver() {
 
-public class AlarmReceiver extends BroadcastReceiver {
-
-    @Override
-    public void onReceive(Context context, Intent intent) {
+    override fun onReceive(context: Context, intent: Intent) {
 
         // 🧪 TEST
-        Toast.makeText(context, "Alarm Triggered!", Toast.LENGTH_SHORT).show();
+        Toast.makeText(context, "Alarm Triggered!", Toast.LENGTH_SHORT).show()
 
-        String name = intent.getStringExtra("name");
-        String dosage = intent.getStringExtra("dosage");
-        int id = intent.getIntExtra("id", -1); // ✅ FIXED
+        val name = intent.getStringExtra("name")
+        val dosage = intent.getStringExtra("dosage")
+        val id = intent.getIntExtra("id", -1)
 
-        if (id == -1) return; // ✅ safety check
+        if (id == -1) return
 
         // 👉 Taken button intent
-        Intent takenIntent = new Intent(context, TakenReceiver.class);
-        takenIntent.putExtra("id", id); // ✅ IMPORTANT (you already did correctly)
+        val takenIntent = Intent(context, TakenReceiver::class.java)
+        takenIntent.putExtra("id", id)
 
-        PendingIntent takenPendingIntent = PendingIntent.getBroadcast(
-                context,
-                id,
-                takenIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
+        val takenPendingIntent = PendingIntent.getBroadcast(
+            context,
+            id,
+            takenIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
 
-        NotificationManager manager =
-                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        val manager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager?
 
-        if (manager == null) return; // ✅ FIXED
+        if (manager == null) return
 
-        String channelId = "medicine_channel";
+        val channelId = "medicine_channel"
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    channelId,
-                    "Medicine Reminder",
-                    NotificationManager.IMPORTANCE_HIGH
-            );
-            manager.createNotificationChannel(channel);
+            val channel = NotificationChannel(
+                channelId,
+                "Medicine Reminder",
+                NotificationManager.IMPORTANCE_HIGH
+            )
+            manager.createNotificationChannel(channel)
         }
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, channelId)
-                .setContentTitle("💊 Time to take medicine")
-                .setContentText(name + " - " + dosage)
-                .setSmallIcon(android.R.drawable.ic_dialog_info)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setAutoCancel(true)
-                .addAction(
-                        android.R.drawable.checkbox_on_background,
-                        "Taken",
-                        takenPendingIntent
-                );
+        val builder = NotificationCompat.Builder(context, channelId)
+            .setContentTitle("💊 Time to take medicine")
+            .setContentText("$name - $dosage")
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .addAction(
+                android.R.drawable.checkbox_on_background,
+                "Taken",
+                takenPendingIntent
+            )
 
-        manager.notify(id, builder.build());
+        manager.notify(id, builder.build())
     }
 }

@@ -1,152 +1,147 @@
-package com.example.smartmedicinereminder;
+package com.example.smartmedicinereminder
 
-import android.content.Context;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
-import android.content.ContentValues;
-import android.database.Cursor;
+import android.content.ContentValues
+import android.content.Context
+import android.database.sqlite.SQLiteDatabase
+import android.database.sqlite.SQLiteOpenHelper
 
-import java.util.ArrayList;
-import java.util.List;
+class DatabaseHelper(context: Context) :
+    SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
-public class DatabaseHelper extends SQLiteOpenHelper {
+    companion object {
+        private const val DATABASE_NAME = "MedicineDB"
+        private const val DATABASE_VERSION = 3
 
-    private static final String DATABASE_NAME = "MedicineDB";
-    private static final int DATABASE_VERSION = 3; // 🔥 UPDATED
-
-    private static final String TABLE_NAME = "medicines";
-    private static final String COLUMN_ID = "id";
-    private static final String COLUMN_NAME = "name";
-    private static final String COLUMN_DOSAGE = "dosage";
-    private static final String COLUMN_TIME = "time";
-    private static final String COLUMN_DATE = "date"; // ✅ NEW
-    private static final String COLUMN_STATUS = "status";
-
-    public DatabaseHelper(Context context) {
-        super(context, DATABASE_NAME, null, DATABASE_VERSION);
+        private const val TABLE_NAME = "medicines"
+        private const val COLUMN_ID = "id"
+        private const val COLUMN_NAME = "name"
+        private const val COLUMN_DOSAGE = "dosage"
+        private const val COLUMN_TIME = "time"
+        private const val COLUMN_DATE = "date"
+        private const val COLUMN_STATUS = "status"
     }
 
-    @Override
-    public void onCreate(SQLiteDatabase db) {
-        String CREATE_TABLE = "CREATE TABLE " + TABLE_NAME + "("
-                + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
-                + COLUMN_NAME + " TEXT, "
-                + COLUMN_DOSAGE + " TEXT, "
-                + COLUMN_TIME + " TEXT, "
-                + COLUMN_DATE + " TEXT, " // ✅ NEW
-                + COLUMN_STATUS + " INTEGER DEFAULT 0)";
-        db.execSQL(CREATE_TABLE);
+    override fun onCreate(db: SQLiteDatabase) {
+        val createTable = ("CREATE TABLE $TABLE_NAME ("
+                + "$COLUMN_ID INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + "$COLUMN_NAME TEXT, "
+                + "$COLUMN_DOSAGE TEXT, "
+                + "$COLUMN_TIME TEXT, "
+                + "$COLUMN_DATE TEXT, "
+                + "$COLUMN_STATUS INTEGER DEFAULT 0)")
+        db.execSQL(createTable)
     }
 
-    @Override
-    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
-        onCreate(db);
+    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        db.execSQL("DROP TABLE IF EXISTS $TABLE_NAME")
+        onCreate(db)
     }
 
-    // ✅ INSERT WITH DATE
-    public long insertMedicine(String name, String dosage, String time, String date) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
+    // ✅ INSERT
+    fun insertMedicine(name: String, dosage: String, time: String, date: String): Long {
+        val db = writableDatabase
+        val values = ContentValues()
 
-        values.put(COLUMN_NAME, name);
-        values.put(COLUMN_DOSAGE, dosage);
-        values.put(COLUMN_TIME, time);
-        values.put(COLUMN_DATE, date); // ✅ NEW
-        values.put(COLUMN_STATUS, 0);
+        values.put(COLUMN_NAME, name)
+        values.put(COLUMN_DOSAGE, dosage)
+        values.put(COLUMN_TIME, time)
+        values.put(COLUMN_DATE, date)
+        values.put(COLUMN_STATUS, 0)
 
-        long id = db.insert(TABLE_NAME, null, values);
-        db.close();
+        val id = db.insert(TABLE_NAME, null, values)
+        db.close()
 
-        return id;
+        return id
     }
 
-    // ✅ GET ALL DATA
-    public List<Medicine> getAllMedicines() {
-        List<Medicine> list = new ArrayList<>();
-        SQLiteDatabase db = this.getReadableDatabase();
+    // ✅ GET ALL
+    fun getAllMedicines(): List<Medicine> {
+        val list = ArrayList<Medicine>()
+        val db = readableDatabase
 
-        Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_NAME, null);
+        val cursor = db.rawQuery("SELECT * FROM $TABLE_NAME", null)
 
         if (cursor.moveToFirst()) {
             do {
-                int id = cursor.getInt(0);
-                String name = cursor.getString(1);
-                String dosage = cursor.getString(2);
-                String time = cursor.getString(3);
-                String date = cursor.getString(4); // ✅ NEW
-                int status = cursor.getInt(5);
+                val id = cursor.getInt(0)
+                val name = cursor.getString(1)
+                val dosage = cursor.getString(2)
+                val time = cursor.getString(3)
+                val date = cursor.getString(4)
+                val status = cursor.getInt(5)
 
-                list.add(new Medicine(id, name, dosage, time, date, status));
+                list.add(Medicine(id, name, dosage, time, date, status))
 
-            } while (cursor.moveToNext());
+            } while (cursor.moveToNext())
         }
 
-        cursor.close();
-        db.close();
+        cursor.close()
+        db.close()
 
-        return list;
+        return list
     }
 
     // ✅ DELETE
-    public void deleteMedicine(int id) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        db.delete(TABLE_NAME, COLUMN_ID + "=?", new String[]{String.valueOf(id)});
-        db.close();
+    fun deleteMedicine(id: Int) {
+        val db = writableDatabase
+        db.delete(TABLE_NAME, "$COLUMN_ID=?", arrayOf(id.toString()))
+        db.close()
     }
 
     // ✅ UPDATE STATUS
-    public void updateStatus(int id, int status) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put(COLUMN_STATUS, status);
+    fun updateStatus(id: Int, status: Int) {
+        val db = writableDatabase
+        val values = ContentValues()
+        values.put(COLUMN_STATUS, status)
 
-        db.update(TABLE_NAME, values, "id=?", new String[]{String.valueOf(id)});
-        db.close();
+        db.update(TABLE_NAME, values, "id=?", arrayOf(id.toString()))
+        db.close()
     }
 
-    // ✅ MARK AS TAKEN (Notification)
-    public void markAsTaken(int id) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put(COLUMN_STATUS, 1);
+    // ✅ MARK AS TAKEN
+    fun markAsTaken(id: Int) {
+        val db = writableDatabase
+        val values = ContentValues()
+        values.put(COLUMN_STATUS, 1)
 
-        db.update(TABLE_NAME, values, "id=?", new String[]{String.valueOf(id)});
-        db.close();
+        db.update(TABLE_NAME, values, "id=?", arrayOf(id.toString()))
+        db.close()
     }
 
     // 📊 TAKEN COUNT
-    public int getTakenCount() {
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_NAME + " WHERE status=1", null);
+    fun getTakenCount(): Int {
+        val db = readableDatabase
+        val cursor = db.rawQuery(
+            "SELECT COUNT(*) FROM $TABLE_NAME WHERE status=1",
+            null
+        )
 
-        int count = 0;
+        var count = 0
         if (cursor.moveToFirst()) {
-            count = cursor.getInt(0);
+            count = cursor.getInt(0)
         }
 
-        cursor.close();
-        db.close();
-        return count;
+        cursor.close()
+        db.close()
+        return count
     }
 
     // ❌ MISSED COUNT
-    public int getMissedCount() {
-        SQLiteDatabase db = this.getReadableDatabase();
+    fun getMissedCount(): Int {
+        val db = readableDatabase
 
-        String query = "SELECT COUNT(*) FROM " + TABLE_NAME +
-                " WHERE status=0 AND date < date('now')";
+        val query = "SELECT COUNT(*) FROM $TABLE_NAME WHERE status=0 AND date < date('now')"
 
-        Cursor cursor = db.rawQuery(query, null);
+        val cursor = db.rawQuery(query, null)
 
-        int count = 0;
+        var count = 0
         if (cursor.moveToFirst()) {
-            count = cursor.getInt(0);
+            count = cursor.getInt(0)
         }
 
-        cursor.close();
-        db.close();
+        cursor.close()
+        db.close()
 
-        return count;
+        return count
     }
 }

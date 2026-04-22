@@ -1,85 +1,67 @@
-package com.example.smartmedicinereminder;
+package com.example.smartmedicinereminder
 
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.TextView;
-import android.widget.Button;
-import android.widget.CheckBox;
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Button
+import android.widget.CheckBox
+import android.widget.TextView
+import androidx.recyclerview.widget.RecyclerView
 
-import androidx.recyclerview.widget.RecyclerView;
+class MedicineAdapter(
+    private val list: MutableList<Medicine>,
+    private val dbHelper: DatabaseHelper
+) : RecyclerView.Adapter<MedicineAdapter.ViewHolder>() {
 
-import java.util.List;
-
-public class MedicineAdapter extends RecyclerView.Adapter<MedicineAdapter.ViewHolder> {
-
-    List<Medicine> list;
-    DatabaseHelper dbHelper;
-
-    public MedicineAdapter(List<Medicine> list, DatabaseHelper dbHelper) {
-        this.list = list;
-        this.dbHelper = dbHelper;
+    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val tvName: TextView = itemView.findViewById(R.id.tvName)
+        val tvDosage: TextView = itemView.findViewById(R.id.tvDosage)
+        val tvTime: TextView = itemView.findViewById(R.id.tvTime)
+        val btnDelete: Button = itemView.findViewById(R.id.btnDelete)
+        val checkTaken: CheckBox = itemView.findViewById(R.id.checkTaken)
     }
 
-    public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView tvName, tvDosage, tvTime;
-        Button btnDelete;
-        CheckBox checkTaken;
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_medicine, parent, false)
+        return ViewHolder(view)
+    }
 
-        public ViewHolder(View itemView) {
-            super(itemView);
-            tvName = itemView.findViewById(R.id.tvName);
-            tvDosage = itemView.findViewById(R.id.tvDosage);
-            tvTime = itemView.findViewById(R.id.tvTime);
-            btnDelete = itemView.findViewById(R.id.btnDelete);
-            checkTaken = itemView.findViewById(R.id.checkTaken);
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val m = list[position]
+
+        holder.tvName.text = m.name
+        holder.tvDosage.text = m.dosage
+        holder.tvTime.text = m.time
+
+        // ✅ Prevent auto-trigger bug
+        holder.checkTaken.setOnCheckedChangeListener(null)
+
+        // ✅ Set checkbox state
+        holder.checkTaken.isChecked = (m.status == 1)
+
+        // ✅ When user clicks checkbox
+        holder.checkTaken.setOnCheckedChangeListener { _, isChecked ->
+            val status = if (isChecked) 1 else 0
+            m.status = status
+            dbHelper.updateStatus(m.id, status)
+        }
+
+        // 🗑 Delete button
+        holder.btnDelete.setOnClickListener {
+            val pos = holder.adapterPosition
+
+            if (pos != RecyclerView.NO_POSITION) {
+                val medicine = list[pos]
+
+                dbHelper.deleteMedicine(medicine.id)
+                list.removeAt(pos)
+                notifyItemRemoved(pos)
+            }
         }
     }
 
-    @Override
-    public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_medicine, parent, false);
-        return new ViewHolder(view);
-    }
-
-    @Override
-    public void onBindViewHolder(ViewHolder holder, int position) {
-        Medicine m = list.get(position);
-
-        holder.tvName.setText(m.getName());
-        holder.tvDosage.setText(m.getDosage());
-        holder.tvTime.setText(m.getTime());
-
-        // ✅ IMPORTANT: Reset listener first (prevents auto-trigger bug)
-        holder.checkTaken.setOnCheckedChangeListener(null);
-
-        // ✅ SET CHECKBOX BASED ON DATABASE STATUS
-        holder.checkTaken.setChecked(m.getStatus() == 1);
-
-        // ✅ WHEN USER MANUALLY CHECKS
-        holder.checkTaken.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            int status = isChecked ? 1 : 0;
-            m.setStatus(status);
-            dbHelper.updateStatus(m.getId(), status);
-        });
-
-        // 🗑 DELETE BUTTON
-        holder.btnDelete.setOnClickListener(v -> {
-            int pos = holder.getAdapterPosition();
-
-            if (pos != RecyclerView.NO_POSITION) {
-                Medicine medicine = list.get(pos);
-
-                dbHelper.deleteMedicine(medicine.getId());
-                list.remove(pos);
-                notifyItemRemoved(pos);
-            }
-        });
-    }
-
-    @Override
-    public int getItemCount() {
-        return list.size();
+    override fun getItemCount(): Int {
+        return list.size
     }
 }

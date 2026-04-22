@@ -1,125 +1,123 @@
-package com.example.smartmedicinereminder;
+package com.example.smartmedicinereminder
 
-import android.Manifest;
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.os.Build;
-import android.os.Bundle;
-import android.view.View;
-import android.widget.Button;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.IntentFilter;
-import android.content.SharedPreferences; // ✅ NEW
+import android.Manifest
+import android.content.*
+import android.content.pm.PackageManager
+import android.os.Build
+import android.os.Bundle
+import android.view.View
+import android.widget.Button
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
+class MainActivity : AppCompatActivity() {
 
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-
-import java.util.List;
-
-public class MainActivity extends AppCompatActivity {
-
-    Button btnAddMedicine, btnDashboard;
-    FloatingActionButton fabAdd;
-    RecyclerView recyclerView;
-    DatabaseHelper dbHelper;
-    MedicineAdapter adapter;
+    private lateinit var btnAddMedicine: Button
+    private lateinit var btnDashboard: Button
+    private lateinit var fabAdd: FloatingActionButton
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var dbHelper: DatabaseHelper
+    private lateinit var adapter: MedicineAdapter
 
     // ✅ Broadcast Receiver
-    private final BroadcastReceiver updateReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            loadData();
+    private val updateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            loadData()
         }
-    };
+    }
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
 
-        // ✅ 🔐 LOGIN CHECK (VERY IMPORTANT)
-        SharedPreferences pref = getSharedPreferences("user", MODE_PRIVATE);
+        // 🔐 LOGIN CHECK
+        val pref = getSharedPreferences("user", MODE_PRIVATE)
         if (!pref.getBoolean("logged", false)) {
-            startActivity(new Intent(this, LoginActivity.class));
-            finish();
-            return; // 🔥 IMPORTANT
+            startActivity(Intent(this, LoginActivity::class.java))
+            finish()
+            return
         }
 
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main)
 
         // 🔔 Notification permission
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this,
-                    Manifest.permission.POST_NOTIFICATIONS)
-                    != PackageManager.PERMISSION_GRANTED) {
-
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.POST_NOTIFICATIONS},
-                        101);
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    101
+                )
             }
         }
 
-        btnAddMedicine = findViewById(R.id.btnAddMedicine);
-        btnDashboard = findViewById(R.id.btnDashboard);
-        fabAdd = findViewById(R.id.fabAdd);
-        recyclerView = findViewById(R.id.recyclerView);
+        btnAddMedicine = findViewById(R.id.btnAddMedicine)
+        btnDashboard = findViewById(R.id.btnDashboard)
+        fabAdd = findViewById(R.id.fabAdd)
+        recyclerView = findViewById(R.id.recyclerView)
 
-        dbHelper = new DatabaseHelper(this);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        dbHelper = DatabaseHelper(this)
+        recyclerView.layoutManager = LinearLayoutManager(this)
 
-        loadData();
+        loadData()
 
         // ✅ Broadcast receiver fix
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(updateReceiver,
-                    new IntentFilter("MEDICINE_UPDATED"),
-                    Context.RECEIVER_NOT_EXPORTED);
+            registerReceiver(
+                updateReceiver,
+                IntentFilter("MEDICINE_UPDATED"),
+                Context.RECEIVER_NOT_EXPORTED
+            )
         } else {
-            registerReceiver(updateReceiver,
-                    new IntentFilter("MEDICINE_UPDATED"));
+            registerReceiver(updateReceiver, IntentFilter("MEDICINE_UPDATED"))
         }
 
-        btnAddMedicine.setOnClickListener(v ->
-                startActivity(new Intent(MainActivity.this, AddMedicineActivity.class)));
+        btnAddMedicine.setOnClickListener {
+            startActivity(Intent(this, AddMedicineActivity::class.java))
+        }
 
-        fabAdd.setOnClickListener(v ->
-                startActivity(new Intent(MainActivity.this, AddMedicineActivity.class)));
+        fabAdd.setOnClickListener {
+            startActivity(Intent(this, AddMedicineActivity::class.java))
+        }
 
-        btnDashboard.setOnClickListener(v ->
-                startActivity(new Intent(MainActivity.this, DashboardActivity.class)));
+        btnDashboard.setOnClickListener {
+            startActivity(Intent(this, DashboardActivity::class.java))
+        }
     }
 
-    private void loadData() {
-        List<Medicine> list = dbHelper.getAllMedicines();
+    private fun loadData() {
+        val list = dbHelper.getAllMedicines()
 
         if (list.isEmpty()) {
-            recyclerView.setVisibility(View.GONE);
-            btnAddMedicine.setVisibility(View.VISIBLE);
-            fabAdd.setVisibility(View.GONE);
+            recyclerView.visibility = View.GONE
+            btnAddMedicine.visibility = View.VISIBLE
+            fabAdd.visibility = View.GONE
         } else {
-            recyclerView.setVisibility(View.VISIBLE);
-            btnAddMedicine.setVisibility(View.GONE);
-            fabAdd.setVisibility(View.VISIBLE);
+            recyclerView.visibility = View.VISIBLE
+            btnAddMedicine.visibility = View.GONE
+            fabAdd.visibility = View.VISIBLE
 
-            adapter = new MedicineAdapter(list, dbHelper);
-            recyclerView.setAdapter(adapter);
+            // ✅ 🔥 FIX HERE (IMPORTANT)
+            adapter = MedicineAdapter(list.toMutableList(), dbHelper)
+
+            recyclerView.adapter = adapter
         }
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        loadData();
+    override fun onResume() {
+        super.onResume()
+        loadData()
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        unregisterReceiver(updateReceiver);
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterReceiver(updateReceiver)
     }
 }

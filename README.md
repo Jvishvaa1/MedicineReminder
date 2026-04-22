@@ -1,4 +1,4 @@
-# Smart Medicine Reminder App
+# Smart Medicine Reminder Android App
 
 📱 Android app to remind users to take medicines on time.
 
@@ -12,7 +12,7 @@
 
 ## Tech Used
 
-* Java
+* Kotlin
 * Android Studio
 * SQLite
 * AlarmManager

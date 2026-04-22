@@ -68,15 +68,13 @@ class MainActivity : AppCompatActivity() {
 
         loadData()
 
-        // ✅ Broadcast receiver fix
+        // ✅ 🔥 FINAL FIX (important)
+        val filter = IntentFilter("MEDICINE_UPDATED")
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(
-                updateReceiver,
-                IntentFilter("MEDICINE_UPDATED"),
-                Context.RECEIVER_NOT_EXPORTED
-            )
+            registerReceiver(updateReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         } else {
-            registerReceiver(updateReceiver, IntentFilter("MEDICINE_UPDATED"))
+            registerReceiver(updateReceiver, filter)
         }
 
         btnAddMedicine.setOnClickListener {
@@ -104,9 +102,7 @@ class MainActivity : AppCompatActivity() {
             btnAddMedicine.visibility = View.GONE
             fabAdd.visibility = View.VISIBLE
 
-            // ✅ 🔥 FIX HERE (IMPORTANT)
             adapter = MedicineAdapter(list.toMutableList(), dbHelper)
-
             recyclerView.adapter = adapter
         }
     }
